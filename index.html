@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tiny Plates</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--pink:#D4537E;--pink-light:#FBEAF0;--pink-mid:#F4C0D1;--pink-dark:#4B1528;--pink-deep:#72243E;--black:#1a1a1a;--black2:#2C2C2A;--surface:#ffffff;--surface2:#f8f4f5;--border:#e8dde0;--text:#1a1a1a;--muted:#6b5b5f;--hint:#a8949a;--radius:12px;--radius-sm:8px;--green:#2d7a3a;--green-light:#e8f5eb;}
+body{font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);background:var(--surface2);min-height:100vh;}
+.topbar{background:var(--black2);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:54px;position:sticky;top:0;z-index:100;}
+.brand{font-family:'DM Serif Display',serif;font-size:22px;color:white;}
+.brand span{font-style:italic;color:var(--pink);}
+.brand-dot{width:7px;height:7px;border-radius:50%;background:var(--pink);display:inline-block;margin-left:3px;vertical-align:middle;}
+.nav{display:flex;gap:3px;}
+.nav-btn{padding:7px 13px;border:none;background:transparent;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--pink-mid);}
+.nav-btn.active{background:var(--pink);color:white;font-weight:500;}
+.nav-btn:hover:not(.active){background:rgba(255,255,255,0.08);color:white;}
+.sync-status{font-size:11px;color:var(--pink-mid);}
+.main{max-width:960px;margin:0 auto;padding:1.5rem 1rem 4rem;}
+.section{display:none;}.section.active{display:block;}
+.grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.5rem;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1rem;}
+@media(max-width:640px){.grid-4{grid-template-columns:1fr 1fr;}.grid-2{grid-template-columns:1fr;}}
+.metric{background:var(--black2);border-radius:var(--radius-sm);padding:1rem;}
+.metric-label{font-size:11px;color:var(--pink-mid);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em;}
+.metric-value{font-size:20px;font-weight:500;color:white;}
+.metric-value.pink{color:var(--pink-mid);}
+.metric-value.green{color:#7ed99a;}
+.metric-sub{font-size:11px;color:#888;margin-top:2px;}
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1rem;}
+.card-pink{background:var(--pink-light);border-color:var(--pink-mid);}
+.card-title{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:1rem;}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;margin-top:10px;}
+label:first-child{margin-top:0;}
+input,select,textarea{width:100%;padding:9px 11px;border:0.5px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:13px;background:var(--surface);color:var(--text);outline:none;}
+input:focus,select:focus,textarea:focus{border-color:var(--pink);}
+textarea{resize:vertical;min-height:60px;}
+.btn-primary{padding:10px 22px;background:var(--pink);color:white;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;}
+.btn-primary:hover{background:var(--pink-deep);}
+.btn-secondary{padding:9px 16px;background:transparent;color:var(--text);border:0.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;}
+.btn-secondary:hover{background:var(--surface2);}
+.btn-sm{padding:4px 10px;font-size:11px;border-radius:5px;cursor:pointer;border:0.5px solid var(--border);background:transparent;font-family:'DM Sans',sans-serif;}
+.btn-edit{color:var(--pink);border-color:var(--pink-mid);}
+.btn-edit:hover{background:var(--pink-light);}
+.btn-del{color:var(--muted);}
+.btn-del:hover{background:#fee;color:#c00;border-color:#c00;}
+.btn-wa{padding:5px 10px;background:#25D366;color:white;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:11px;font-weight:500;}
+.btn-gcal{padding:10px;background:#4285F4;color:white;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:500;}
+.tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500;}
+.tag-gpay{background:var(--pink-light);color:var(--pink-deep);}
+.tag-cash{background:#FAEEDA;color:#633806;}
+.tag-paid{background:var(--pink-light);color:var(--pink-deep);}
+.tag-pending{background:#FAEEDA;color:#633806;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;font-size:11px;font-weight:500;color:var(--muted);padding:7px 8px;border-bottom:0.5px solid var(--border);}
+td{padding:9px 8px;border-bottom:0.5px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--pink-light);}
+.dish-row,.client-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer;padding:8px;border-radius:var(--radius-sm);border:0.5px solid transparent;transition:all 0.15s;}
+.dish-row:hover,.client-row:hover{background:var(--pink-light);border-color:var(--pink-mid);}
+.bar-bg{height:7px;border-radius:4px;background:var(--pink-mid);overflow:hidden;flex:1;}
+.bar-fill-pink{height:100%;border-radius:4px;background:var(--pink);}
+.bar-fill-black{height:100%;border-radius:4px;background:var(--black2);}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--pink);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:white;flex-shrink:0;}
+.menu-cat-label{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin:14px 0 7px;}
+.menu-grid-tap{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:7px;margin-bottom:4px;}
+.menu-item{border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;cursor:pointer;transition:all 0.15s;background:var(--surface);}
+.menu-item:hover{border-color:var(--pink);background:var(--pink-light);}
+.menu-item.selected{border-color:var(--pink);background:var(--pink-light);border-width:1.5px;}
+.menu-item-name{font-size:12px;font-weight:500;margin-bottom:2px;}
+.menu-item-price{font-size:11px;color:var(--pink);}
+.menu-item-check{font-size:10px;color:var(--pink);margin-top:2px;}
+.cart-row{display:grid;grid-template-columns:1fr 58px 80px 28px;gap:6px;align-items:center;margin-bottom:6px;}
+.cart-row input{margin:0;padding:6px 8px;}
+.remove-btn{width:28px;height:28px;border:none;background:transparent;cursor:pointer;border-radius:4px;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;}
+.remove-btn:hover{background:var(--pink-light);color:var(--pink-deep);}
+.order-total-bar{background:var(--black2);border-radius:var(--radius-sm);padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+.misc-area{background:var(--pink-light);border:0.5px solid var(--pink-mid);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;}
+.misc-title{font-size:12px;font-weight:500;color:var(--pink-deep);margin-bottom:8px;}
+.filter-row{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;}
+.filter-row input,.filter-row select{width:auto;flex:1;min-width:110px;}
+.summary-bar{background:var(--black2);border-radius:var(--radius-sm);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+.summary-bar span{font-size:12px;color:var(--pink-mid);}
+.summary-bar strong{color:white;}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--pink);cursor:pointer;margin-bottom:1rem;padding:6px 12px;border-radius:var(--radius-sm);border:0.5px solid var(--pink-mid);background:var(--pink-light);}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--black2);color:var(--pink-mid);padding:10px 18px;border-radius:var(--radius-sm);font-size:13px;z-index:9999;opacity:0;transition:opacity 0.3s;pointer-events:none;border:0.5px solid var(--pink);}
+.toast.show{opacity:1;}
+.empty{text-align:center;padding:2rem;color:var(--muted);font-size:13px;}
+.col-hdr{display:grid;grid-template-columns:1fr 58px 80px 28px;gap:6px;padding:0 2px;margin-bottom:4px;}
+.col-hdr span{font-size:11px;color:var(--hint);}
+.profit-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;background:var(--green-light);color:var(--green);}
+.period-btn{padding:5px 12px;border:0.5px solid var(--border);border-radius:20px;background:transparent;cursor:pointer;font-size:12px;color:var(--muted);}
+.period-btn.active{background:var(--black2);color:white;border-color:var(--black2);}
+.menu-mgr-row{display:grid;grid-template-columns:1fr 100px 90px 90px 80px 32px;gap:6px;align-items:center;margin-bottom:6px;}
+.menu-mgr-row input,.menu-mgr-row select{margin:0;padding:5px 7px;font-size:12px;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">tiny <span>plates</span><span class="brand-dot"></span></div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="showSection('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="showSection('orders')">Orders</button>
+    <button class="nav-btn" onclick="showSection('new-order')">+ New order</button>
+    <button class="nav-btn" onclick="showSection('menu-mgr')">Menu</button>
+  </div>
+  <div class="sync-status" id="sync-status">ready</div>
+</div>
+<div class="main">
+  <div id="dashboard" class="section active">
+    <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;">
+      <button class="period-btn active" onclick="setPeriod('all',this)">All time</button>
+      <button class="period-btn" onclick="setPeriod('month',this)">This month</button>
+      <button class="period-btn" onclick="setPeriod('week',this)">This week</button>
+      <button class="period-btn" onclick="setPeriod('today',this)">Today</button>
+    </div>
+    <div class="grid-4">
+      <div class="metric"><div class="metric-label">Revenue</div><div class="metric-value pink" id="m-revenue">₹0</div><div class="metric-sub" id="m-rev-sub">all time</div></div>
+      <div class="metric"><div class="metric-label">Orders</div><div class="metric-value" id="m-orders">0</div><div class="metric-sub" id="m-ord-sub">all time</div></div>
+      <div class="metric"><div class="metric-label">Profit</div><div class="metric-value green" id="m-profit">₹0</div><div class="metric-sub" id="m-margin"></div></div>
+      <div class="metric"><div class="metric-label">Avg order</div><div class="metric-value" id="m-avg">₹0</div><div class="metric-sub" id="m-pay-split"></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Top dishes — click to drill down</div><div id="top-dishes"></div></div>
+      <div class="card"><div class="card-title">Top clients — click for history</div><div id="top-clients"></div></div>
+    </div>
+    <div class="card"><div class="card-title">Recent orders</div><div id="recent-orders"></div></div>
+  </div>
+  <div id="orders" class="section">
+    <div id="orders-detail-view" style="display:none;"><div class="back-btn" onclick="closeDetail()">← Back</div><div id="orders-detail-content"></div></div>
+    <div id="orders-list-view">
+      <div class="filter-row">
+        <input placeholder="Search client or dish..." id="search-input" oninput="renderOrders()">
+        <select id="filter-payment" onchange="renderOrders()"><option value="">All payments</option><option value="Gpay">Gpay</option><option value="Cash">Cash</option></select>
+        <select id="filter-month" onchange="renderOrders()"><option value="">All months</option><option value="2026-03">March 2026</option><option value="2026-04">April 2026</option><option value="2026-05">May 2026</option></select>
+      </div>
+      <div id="orders-table"></div>
+    </div>
+  </div>
+  <div id="new-order" class="section">
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <div class="card-title" id="order-form-title">New order</div>
+          <input type="hidden" id="edit-order-id">
+          <label>Client name</label>
+          <div style="position:relative;">
+            <input type="text" id="o-client" placeholder="Start typing..." oninput="clientSuggest(this)" autocomplete="off">
+            <div id="client-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-sm);z-index:50;max-height:160px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.1);"></div>
+          </div>
+          <label>Phone (WhatsApp)</label><input type="text" id="o-phone" placeholder="9876543210">
+          <label>Delivery date</label><input type="date" id="o-date">
+          <label>Delivery time</label><input type="time" id="o-time">
+          <label>Payment method</label><select id="o-payment"><option>Gpay</option><option>Cash</option><option>Bank Transfer</option></select>
+          <label>Payment status</label><select id="o-status"><option>Paid</option><option>Pending</option></select>
+          <label>UPI ID</label><input type="text" id="o-upi" placeholder="e.g. name@okhdfcbank">
+          <label>Notes</label><textarea id="o-notes" placeholder="Special instructions..."></textarea>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-title">Menu — tap to add</div>
+          <div id="menu-grid"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Order summary</div>
+      <div class="misc-area">
+        <div class="misc-title">Custom / miscellaneous item</div>
+        <div style="display:grid;grid-template-columns:1fr 70px 90px auto;gap:6px;align-items:center;">
+          <input type="text" id="misc-name" placeholder="Item name" style="margin:0;">
+          <input type="number" id="misc-qty" value="1" min="1" style="margin:0;">
+          <input type="number" id="misc-price" placeholder="price" min="0" style="margin:0;">
+          <button class="btn-primary" style="padding:8px 14px;" onclick="addMisc()">+ Add</button>
+        </div>
+      </div>
+      <div class="col-hdr"><span>Item</span><span>Qty</span><span>Price</span><span></span></div>
+      <div id="cart-items"></div>
+      <div style="text-align:center;color:var(--muted);font-size:13px;padding:10px;" id="cart-empty">Tap menu items above to add them here</div>
+    </div>
+    <div class="order-total-bar">
+      <div>
+        <div style="font-size:11px;color:var(--pink-mid);text-transform:uppercase;letter-spacing:0.04em;">Order total</div>
+        <div style="font-size:26px;font-weight:500;color:white;" id="order-total">₹0</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="font-size:11px;color:var(--pink-mid);display:none;" id="saving-ind">Saving...</span>
+        <button class="btn-secondary" onclick="resetForm()" style="color:var(--pink-mid);border-color:rgba(244,192,209,0.3);">Clear</button>
+        <button class="btn-primary" id="save-btn" onclick="saveOrder()">Save order</button>
+      </div>
+    </div>
+    <div id="post-save-modal" style="display:none;"></div>
+  </div>
+  <div id="menu-mgr" class="section">
+    <div class="card">
+      <div class="card-title">Menu & pricing</div>
+      <div style="display:grid;grid-template-columns:1fr 100px 90px 90px 80px 32px;gap:6px;padding:0 2px;margin-bottom:8px;">
+        <span style="font-size:11px;color:var(--hint);">Item</span><span style="font-size:11px;color:var(--hint);">Category</span><span style="font-size:11px;color:var(--hint);">Sell</span><span style="font-size:11px;color:var(--hint);">Cost</span><span style="font-size:11px;color:var(--hint);">Margin</span><span></span>
+      </div>
+      <div id="menu-mgr-list"></div>
+      <div style="margin-top:14px;padding-top:12px;border-top:0.5px solid var(--border);">
+        <div style="font-size:12px;font-weight:500;color:var(--muted);margin-bottom:8px;">Add new item</div>
+        <div style="display:grid;grid-template-columns:1fr 100px 90px 90px auto;gap:6px;align-items:center;">
+          <input type="text" id="new-item-name" placeholder="Item name" style="margin:0;">
+          <select id="new-item-cat" style="margin:0;padding:8px;"><option>Boards & logs</option><option>Gift boxes</option><option>Extras</option></select>
+          <input type="number" id="new-item-sell" placeholder="sell" min="0" style="margin:0;">
+          <input type="number" id="new-item-cost" placeholder="cost" min="0" style="margin:0;">
+          <button class="btn-primary" style="padding:9px 14px;" onclick="addMenuItem()">+ Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="card"><div class="card-title">Profit by dish</div><div id="profit-by-item"></div></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const UPI_DEFAULT="Shayanbhathena@okhdfcbank";
+
+// All data baked in — loads instantly, no sheet dependency on startup
+const SEED_ORDERS=[
+  {ID:"m001",Client:"Shirene Muncherjee",Phone:"",Date:"2026-03-20",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Honey Goat Boat",qty:1,price:2200,cost:1127},{name:"Bacon Bomb",qty:1,price:1800,cost:1378},{name:"Add ons",qty:8,price:300,cost:263}],Total:6400},
+  {ID:"m002",Client:"Ayeshah Dadachanji",Phone:"",Date:"2026-03-15",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Honey Goat Boat",qty:1,price:2200,cost:1127},{name:"Wasabi Street",qty:1,price:1500,cost:613},{name:"Crab Dip",qty:1,price:1500,cost:1200},{name:"Hard Cheese",qty:1,price:800,cost:800},{name:"Add ons",qty:9,price:300,cost:267}],Total:8700},
+  {ID:"m003",Client:"Adil Writer",Phone:"",Date:"2026-03-11",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Gift Box- Bacon Bomb",qty:1,price:1800,cost:1378},{name:"Salami Milano",qty:1,price:1500,cost:500},{name:"Spicy Chorizo",qty:1,price:1500,cost:500},{name:"Add ons",qty:1,price:200,cost:200}],Total:5000},
+  {ID:"m004",Client:"Keku Writer",Phone:"",Date:"2026-03-15",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Gift Box- Cranberry Almond Pinecone",qty:1,price:1500,cost:1188},{name:"Salami Milano",qty:1,price:1500,cost:500},{name:"Add ons",qty:1,price:500,cost:300}],Total:3500},
+  {ID:"m005",Client:"Rohina Najmi",Phone:"",Date:"2026-03-21",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Honey Goat Boat 500gms",qty:1,price:3666,cost:1878},{name:"Wasabi Street 500gms",qty:1,price:2500,cost:1021},{name:"Bacon Bomb 500gms",qty:1,price:3000,cost:2296},{name:"Salmon Log 300gms",qty:1,price:3666,cost:1491},{name:"Bacon Bomb",qty:1,price:1800,cost:1378},{name:"Wasabi Street",qty:1,price:1500,cost:613}],Total:12832},
+  {ID:"m006",Client:"Piya Basu",Phone:"",Date:"2026-03-24",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Bacon Bomb Mini",qty:1,price:4000,cost:689},{name:"Cranberry Almond Pinecone",qty:1,price:1500,cost:1188},{name:"Hard Cheese",qty:1,price:800,cost:800},{name:"Add ons",qty:1,price:300,cost:300}],Total:4000},
+  {ID:"m007",Client:"Kamal Daruwala",Phone:"",Date:"2026-03-06",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Honey Goat Boat Mini",qty:1,price:1100,cost:564}],Total:1100},
+  {ID:"m008",Client:"Dwiti Hegde",Phone:"",Date:"2026-03-06",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Honey Goat Boat",qty:1,price:2200,cost:1127},{name:"Curry Lane",qty:1,price:850,cost:499},{name:"Add ons",qty:10,price:300,cost:270}],Total:6050},
+  {ID:"m009",Client:"Rahul Mathur",Phone:"",Date:"2026-03-27",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Curry Lane",qty:1.5,price:1275,cost:749},{name:"Honey Goat Boat",qty:1,price:2200,cost:1127},{name:"Bacon Bomb",qty:1,price:1800,cost:1378},{name:"Crab Dip",qty:1,price:1500,cost:1200}],Total:6775},
+  {ID:"m010",Client:"Anuja Ashdeen Jamshetji",Phone:"",Date:"2026-03-26",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Salmon Wreath",qty:1,price:2200,cost:895}],Total:2200},
+  {ID:"m011",Client:"Sanjana Khandelwal",Phone:"",Date:"2026-03-23",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Wasabi Street",qty:1,price:1500,cost:613},{name:"Honey Goat Boat",qty:1,price:2200,cost:1127},{name:"Monsoon Crackers",qty:1,price:300,cost:295}],Total:4000},
+  {ID:"m012",Client:"Malcolm Siganporia",Phone:"",Date:"2026-03-25",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Honey Goat Boat",qty:1,price:2200,cost:1127},{name:"Bacon Bomb Mini",qty:1,price:1400,cost:689},{name:"Salami Milano",qty:1,price:1000,cost:500},{name:"Add ons",qty:8,price:300,cost:300}],Total:7001},
+  {ID:"m013",Client:"Freyan Bhathena",Phone:"",Date:"2026-03-08",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Honey Goat Boat",qty:1,price:1800,cost:1127}],Total:1800},
+  {ID:"a001",Client:"Delzeen Bhumgara",Phone:"",Date:"2026-04-01",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Honey Goat Boat",qty:1,price:2200,cost:1127}],Total:2200},
+  {ID:"a002",Client:"Zohanne Dinshaw",Phone:"",Date:"2026-04-01",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Bacon Bomb",qty:1,price:1800,cost:1378}],Total:1800},
+  {ID:"a003",Client:"Anaisha Patel",Phone:"",Date:"2026-04-01",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Wasabi Street",qty:1,price:1500,cost:613}],Total:1500},
+  {ID:"a004",Client:"Nazreen Hathiram",Phone:"",Date:"2026-04-01",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Wasabi Street",qty:1,price:1500,cost:613}],Total:1500},
+  {ID:"a005",Client:"Homurz Adrianwala",Phone:"",Date:"2026-04-01",Time:"",Payment:"Cash",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Crab Dip",qty:1,price:1500,cost:1200},{name:"Wasabi Street",qty:1,price:1500,cost:613}],Total:3000},
+  {ID:"a006",Client:"Khushi Vivaina",Phone:"",Date:"2026-04-07",Time:"",Payment:"Cash",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Gift Box- Bacon Bomb",qty:1,price:1800,cost:1378},{name:"Salami Milano",qty:1,price:1500,cost:500},{name:"Spicy Chorizo",qty:1,price:1500,cost:500},{name:"Add ons",qty:1,price:200,cost:200}],Total:5000},
+  {ID:"a007",Client:"Delzeen Bhumgara",Phone:"",Date:"2026-04-07",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Honey Goat Boat",qty:1,price:2200,cost:1127}],Total:2200},
+  {ID:"a008",Client:"Tarini Fernandes",Phone:"",Date:"2026-04-07",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Wasabi Street",qty:1,price:1500,cost:613}],Total:1500},
+  {ID:"a009",Client:"Pratha Poddar",Phone:"",Date:"2026-04-09",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Honey Goat Boat",qty:1,price:2200,cost:1127}],Total:2200},
+  {ID:"a010",Client:"Janaki Bhat",Phone:"",Date:"2026-04-10",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Wasabi Street",qty:1,price:1500,cost:613},{name:"Cranberry Almond Pinecone",qty:1,price:1500,cost:1188}],Total:1500},
+  {ID:"a011",Client:"Harsha Shetty",Phone:"",Date:"2026-04-11",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Wasabi Street",qty:1,price:1500,cost:613}],Total:1500},
+  {ID:"a012",Client:"Kainaz Daruwala",Phone:"",Date:"2026-04-11",Time:"",Payment:"Cash",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Honey Goat Boat",qty:3,price:2200,cost:1127}],Total:6600},
+  {ID:"a013",Client:"Priyanka Mehta",Phone:"",Date:"2026-04-11",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Honey Goat Boat",qty:1,price:2200,cost:1127},{name:"Wasabi Street",qty:1,price:1500,cost:613}],Total:2200},
+  {ID:"a014",Client:"Kainaz Daruwala",Phone:"",Date:"2026-04-17",Time:"",Payment:"Cash",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Honey Goat Boat",qty:3,price:2200,cost:1127}],Total:6600},
+  {ID:"a015",Client:"Armin Patel",Phone:"",Date:"2026-04-17",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"Friends & fam price",Items:[{name:"Wasabi Street",qty:1,price:1200,cost:613}],Total:1200},
+  {ID:"a016",Client:"Jenaina Irani",Phone:"",Date:"2026-04-17",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Honey Goat Boat",qty:1,price:2200,cost:1127},{name:"Wasabi Street",qty:1,price:1500,cost:613}],Total:2200}
+];
+
+const SEED_MENU=[
+  {name:"Honey Goat Boat",cat:"Boards & logs",sell:2200,cost:1127},
+  {name:"Honey Goat Boat Mini",cat:"Boards & logs",sell:1400,cost:564},
+  {name:"Bacon Bomb",cat:"Boards & logs",sell:1800,cost:1378},
+  {name:"Bacon Bomb Mini",cat:"Boards & logs",sell:1400,cost:689},
+  {name:"Salmon Log",cat:"Boards & logs",sell:1800,cost:982},
+  {name:"Salmon Wreath",cat:"Boards & logs",sell:2200,cost:895},
+  {name:"Country Oaf",cat:"Boards & logs",sell:1200,cost:953},
+  {name:"Curry Lane",cat:"Boards & logs",sell:850,cost:499},
+  {name:"Wasabi Street",cat:"Boards & logs",sell:1500,cost:613},
+  {name:"Crab Dip",cat:"Boards & logs",sell:1500,cost:1200},
+  {name:"Gift Box- Bacon Bomb",cat:"Gift boxes",sell:1800,cost:1378},
+  {name:"Gift Box- Cranberry Almond Pinecone",cat:"Gift boxes",sell:1500,cost:1188},
+  {name:"Cranberry Almond Pinecone",cat:"Gift boxes",sell:1500,cost:1188},
+  {name:"Salami Milano",cat:"Extras",sell:1500,cost:500},
+  {name:"Spicy Chorizo",cat:"Extras",sell:1500,cost:1000},
+  {name:"Saucisson",cat:"Extras",sell:1500,cost:750},
+  {name:"Proscuitto",cat:"Extras",sell:1500,cost:1000},
+  {name:"Hard Cheese",cat:"Extras",sell:800,cost:800},
+  {name:"Monsoon Crackers",cat:"Extras",sell:300,cost:295},
+  {name:"Extra Lavash",cat:"Extras",sell:100,cost:75}
+];
+
+let orders=[], menuItems=[], cart=[], currentPeriod='all';
+
+function loadData(){
+  try{ const s=localStorage.getItem('tp_orders'); orders=s?JSON.parse(s):SEED_ORDERS.map(o=>({...o})); }catch(e){ orders=SEED_ORDERS.map(o=>({...o})); }
+  try{ const s=localStorage.getItem('tp_menu'); menuItems=s?JSON.parse(s):SEED_MENU.map(m=>({...m})); }catch(e){ menuItems=SEED_MENU.map(m=>({...m})); }
+  if(!orders.length) orders=SEED_ORDERS.map(o=>({...o}));
+  if(!menuItems.length) menuItems=SEED_MENU.map(m=>({...m}));
+}
+function saveLocal(){
+  try{ localStorage.setItem('tp_orders',JSON.stringify(orders)); localStorage.setItem('tp_menu',JSON.stringify(menuItems)); }catch(e){}
+}
+)
+      .withFailureHandler(function(){ document.getElementById('sync-status').textContent='saved locally'; })
+      .saveOrder(order);
+  }catch(e){ document.getElementById('sync-status').textContent='saved locally'; }
+}
+
+loadData();
+
+function fmt(n){return '\u20B9'+Math.round(n).toLocaleString('en-IN');}
+function fmtDate(d){if(!d)return '';const dt=new Date(d+'T00:00:00');if(isNaN(dt))return d;return dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+function ordinalDate(d){if(!d)return 'TBC';const dt=new Date(d+'T00:00:00');if(isNaN(dt))return d;const day=dt.getDate();const suf=['th','st','nd','rd'];const v=day%100;const ord=suf[(v-20)%10]||suf[v]||suf[0];return day+ord+' '+dt.toLocaleDateString('en-IN',{month:'long'});}
+function initials(n){return n.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+function getCost(name){const m=menuItems.find(i=>i.name===name);return m?m.cost||0:0;}
+
+function filterByPeriod(list){
+  const now=new Date();const today=now.toISOString().split('T')[0];
+  const weekAgo=new Date(now-7*864e5).toISOString().split('T')[0];
+  const monthStart=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
+  if(currentPeriod==='today')return list.filter(o=>o.Date===today);
+  if(currentPeriod==='week')return list.filter(o=>o.Date>=weekAgo);
+  if(currentPeriod==='month')return list.filter(o=>o.Date>=monthStart);
+  return list;
+}
+function setPeriod(p,btn){currentPeriod=p;document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderDashboard();}
+
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  ['dashboard','orders','new-order','menu-mgr'].forEach((s,i)=>{if(s===id)document.querySelectorAll('.nav-btn')[i].classList.add('active');});
+  if(id==='dashboard')renderDashboard();
+  if(id==='orders'){document.getElementById('orders-detail-view').style.display='none';document.getElementById('orders-list-view').style.display='block';renderOrders();}
+  if(id==='new-order'){if(!document.getElementById('edit-order-id').value)resetForm();renderMenu();}
+  if(id==='menu-mgr')renderMenuMgr();
+}
+
+function renderDashboard(){
+  const f=filterByPeriod(orders);
+  const rev=f.reduce((s,o)=>s+o.Total,0);
+  const gpay=f.filter(o=>o.Payment!=='Cash').reduce((s,o)=>s+o.Total,0);
+  const cash=f.filter(o=>o.Payment==='Cash').reduce((s,o)=>s+o.Total,0);
+  let tc=0;f.forEach(o=>(o.Items||[]).forEach(it=>{tc+=(it.cost||getCost(it.name)||0)*(it.qty||1);}));
+  const profit=rev-tc;const margin=rev>0?Math.round(profit/rev*100):0;
+  const avg=f.length?Math.round(rev/f.length):0;
+  const label={all:'all time',month:'this month',week:'this week',today:'today'}[currentPeriod];
+  document.getElementById('m-revenue').textContent=fmt(rev);document.getElementById('m-rev-sub').textContent=label;
+  document.getElementById('m-orders').textContent=f.length;document.getElementById('m-ord-sub').textContent=label;
+  document.getElementById('m-profit').textContent=fmt(profit);document.getElementById('m-margin').textContent=margin+'% margin';
+  document.getElementById('m-avg').textContent=fmt(avg);
+  document.getElementById('m-pay-split').textContent=rev?Math.round(gpay/rev*100)+'% Gpay · '+Math.round(cash/rev*100)+'% Cash':'';
+  const dm={};
+  f.forEach(o=>(o.Items||[]).forEach(it=>{if(!it.name||it.name.toLowerCase().includes('add on')||it.name.toLowerCase()==='add ons')return;if(!dm[it.name])dm[it.name]={count:0,revenue:0};dm[it.name].count+=it.qty||1;dm[it.name].revenue+=(it.qty||1)*(it.price||0);}));
+  const dishes=Object.entries(dm).sort((a,b)=>b[1].revenue-a[1].revenue).slice(0,8);const maxD=dishes[0]?dishes[0][1].revenue:1;
+  document.getElementById('top-dishes').innerHTML=dishes.length?dishes.map(([name,d])=>`<div class="dish-row" onclick="drillDownDish('${name.replace(/'/g,"\\'")}')"><div style="min-width:100px;font-size:13px;font-weight:500;">${name}</div><div class="bar-bg"><div class="bar-fill-pink" style="width:${Math.round(d.revenue/maxD*100)}%;height:100%;"></div></div><div style="text-align:right;min-width:68px;"><div style="font-size:13px;font-weight:500;">${fmt(d.revenue)}</div><div style="font-size:11px;color:var(--muted);">${Math.round(d.count)} sold</div></div></div>`).join(''):'<div class="empty">No data</div>';
+  const cm={};f.forEach(o=>{if(!cm[o.Client])cm[o.Client]={count:0,revenue:0};cm[o.Client].count++;cm[o.Client].revenue+=o.Total;});
+  const clients=Object.entries(cm).sort((a,b)=>b[1].revenue-a[1].revenue).slice(0,8);const maxC=clients[0]?clients[0][1].revenue:1;
+  document.getElementById('top-clients').innerHTML=clients.length?clients.map(([name,c])=>`<div class="client-row" onclick="drillDownClient('${name.replace(/'/g,"\\'")}')" ><div class="avatar">${initials(name)}</div><div style="flex:1;"><div style="font-size:13px;font-weight:500;margin-bottom:4px;">${name}</div><div class="bar-bg"><div class="bar-fill-black" style="width:${Math.round(c.revenue/maxC*100)}%;height:100%;"></div></div></div><div style="text-align:right;min-width:68px;"><div style="font-size:13px;font-weight:500;">${fmt(c.revenue)}</div><div style="font-size:11px;color:var(--muted);">${c.count} order${c.count>1?'s':''}</div></div></div>`).join(''):'<div class="empty">No data</div>';
+  const recent=orders.slice().sort((a,b)=>new Date(b.Date)-new Date(a.Date)).slice(0,6);
+  document.getElementById('recent-orders').innerHTML=recent.length?`<table><tr><th>Date</th><th>Client</th><th>Dishes</th><th>Total</th><th>Pay</th><th></th></tr>${recent.map(o=>`<tr><td style="color:var(--muted);white-space:nowrap;font-size:12px;">${fmtDate(o.Date)}</td><td style="font-weight:500;cursor:pointer;color:var(--pink);" onclick="drillDownClient('${o.Client.replace(/'/g,"\\'")}')">${o.Client}</td><td style="color:var(--muted);font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(o.Items||[]).filter(i=>!i.name.toLowerCase().includes('add')).map(i=>i.name+(i.qty>1?' x'+i.qty:'')).join(', ')}</td><td style="font-weight:500;">${fmt(o.Total)}</td><td><span class="tag ${o.Payment==='Cash'?'tag-cash':'tag-gpay'}">${o.Payment}</span></td><td><button class="btn-sm btn-edit" onclick="editOrder('${o.ID}')">Edit</button></td></tr>`).join('')}</table>`:'<div class="empty">No orders yet</div>';
+}
+
+function drillDownDish(dish){
+  showSection('orders');
+  const matched=orders.filter(o=>(o.Items||[]).some(it=>it.name===dish));
+  const cm={};matched.forEach(o=>{const it=(o.Items||[]).find(i=>i.name===dish);if(!cm[o.Client])cm[o.Client]={revenue:0,count:0};cm[o.Client].revenue+=(it?it.qty*it.price:0);cm[o.Client].count+=(it?it.qty:1);});
+  const sorted=Object.entries(cm).sort((a,b)=>b[1].revenue-a[1].revenue);
+  document.getElementById('orders-list-view').style.display='none';document.getElementById('orders-detail-view').style.display='block';
+  document.getElementById('orders-detail-content').innerHTML=`<div class="card card-pink" style="margin-bottom:1rem;"><div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--pink-dark);">${dish}</div><div style="font-size:13px;color:var(--pink-deep);margin-top:4px;">${matched.length} orders · ${sorted.length} clients</div></div><div class="card"><div class="card-title">Clients who ordered this</div><table><tr><th>Client</th><th>Times</th><th>Revenue</th></tr>${sorted.map(([n,d])=>`<tr><td style="font-weight:500;cursor:pointer;color:var(--pink);" onclick="drillDownClient('${n.replace(/'/g,"\\'")}')">${n}</td><td>${Math.round(d.count)}</td><td style="font-weight:500;">${fmt(d.revenue)}</td></tr>`).join('')}</table></div><div class="card"><div class="card-title">All orders with this dish</div><table><tr><th>Date</th><th>Client</th><th>Total</th><th>Pay</th><th></th></tr>${matched.sort((a,b)=>new Date(b.Date)-new Date(a.Date)).map(o=>`<tr><td style="color:var(--muted);font-size:12px;">${fmtDate(o.Date)}</td><td style="cursor:pointer;color:var(--pink);font-weight:500;" onclick="drillDownClient('${o.Client.replace(/'/g,"\\'")}')">${o.Client}</td><td style="font-weight:500;">${fmt(o.Total)}</td><td><span class="tag ${o.Payment==='Cash'?'tag-cash':'tag-gpay'}">${o.Payment}</span></td><td><button class="btn-sm btn-edit" onclick="editOrder('${o.ID}')">Edit</button></td></tr>`).join('')}</table></div>`;
+}
+
+function drillDownClient(name){
+  showSection('orders');
+  const co=orders.filter(o=>o.Client===name).sort((a,b)=>new Date(b.Date)-new Date(a.Date));
+  const totalRev=co.reduce((s,o)=>s+o.Total,0);
+  const dm={};co.forEach(o=>(o.Items||[]).forEach(it=>{if(!it.name.toLowerCase().includes('add'))dm[it.name]=(dm[it.name]||0)+1;}));
+  const fav=Object.entries(dm).sort((a,b)=>b[1]-a[1])[0]?.[0]||'—';
+  document.getElementById('orders-list-view').style.display='none';document.getElementById('orders-detail-view').style.display='block';
+  document.getElementById('orders-detail-content').innerHTML=`<div class="card card-pink" style="margin-bottom:1rem;"><div style="display:flex;align-items:center;gap:14px;"><div style="width:50px;height:50px;border-radius:50%;background:var(--pink);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500;color:white;flex-shrink:0;">${initials(name)}</div><div><div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--pink-dark);">${name}</div><div style="font-size:13px;color:var(--pink-deep);margin-top:2px;">${co.length} order${co.length>1?'s':''} · ${fmt(totalRev)} total · loves: ${fav}</div></div></div></div><div class="card"><div class="card-title">Full order history</div>${co.map(o=>`<div style="border-bottom:0.5px solid var(--border);padding:12px 0;"><div style="display:flex;justify-content:space-between;align-items:flex-start;"><div><div style="font-weight:500;font-size:14px;">${fmtDate(o.Date)}${o.Time?' · '+o.Time:''}</div><div style="font-size:12px;color:var(--muted);margin-top:3px;">${(o.Items||[]).filter(i=>!i.name.toLowerCase().includes('add')).map(i=>i.name+(i.qty>1?' x'+i.qty:'')).join(', ')}</div>${o.Notes?`<div style="font-size:12px;color:var(--hint);margin-top:2px;">${o.Notes}</div>`:''}</div><div style="text-align:right;flex-shrink:0;margin-left:12px;"><div style="font-size:15px;font-weight:500;">${fmt(o.Total)}</div><span class="tag ${o.Payment==='Cash'?'tag-cash':'tag-gpay'}" style="margin-top:3px;display:inline-block;">${o.Payment}</span><div style="margin-top:5px;"><button class="btn-sm btn-edit" onclick="editOrder('${o.ID}')">Edit</button></div></div></div></div>`).join('')}</div>`;
+}
+
+function closeDetail(){document.getElementById('orders-detail-view').style.display='none';document.getElementById('orders-list-view').style.display='block';}
+
+function renderOrders(){
+  const search=(document.getElementById('search-input').value||'').toLowerCase();
+  const payF=document.getElementById('filter-payment').value;
+  const monthF=document.getElementById('filter-month').value;
+  let filtered=orders.filter(o=>{const ms=!search||o.Client.toLowerCase().includes(search)||(o.Items||[]).some(i=>i.name.toLowerCase().includes(search));return ms&&(!payF||o.Payment===payF)&&(!monthF||o.Date.startsWith(monthF));}).sort((a,b)=>new Date(b.Date)-new Date(a.Date));
+  const tot=filtered.reduce((s,o)=>s+o.Total,0);
+  document.getElementById('orders-table').innerHTML=`<div class="summary-bar"><span>${filtered.length} orders</span><span>Total: <strong>${fmt(tot)}</strong></span></div>${filtered.length?`<div class="card" style="padding:0;overflow:hidden;"><table><tr><th>Date</th><th>Client</th><th>Dishes</th><th>Total</th><th>Pay</th><th>Status</th><th></th></tr>${filtered.map(o=>`<tr><td style="color:var(--muted);white-space:nowrap;font-size:12px;">${fmtDate(o.Date)}</td><td style="font-weight:500;cursor:pointer;color:var(--pink);" onclick="drillDownClient('${o.Client.replace(/'/g,"\\'")}')">${o.Client}</td><td style="color:var(--muted);font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(o.Items||[]).filter(i=>!i.name.toLowerCase().includes('add')).map(i=>i.name+(i.qty>1?' x'+i.qty:'')).join(', ')}</td><td style="font-weight:500;">${fmt(o.Total)}</td><td><span class="tag ${o.Payment==='Cash'?'tag-cash':'tag-gpay'}">${o.Payment||'Gpay'}</span></td><td><span class="tag ${(o.Status||'Paid')==='Paid'?'tag-paid':'tag-pending'}">${o.Status||'Paid'}</span></td><td style="white-space:nowrap;display:flex;gap:3px;align-items:center;"><button class="btn-sm btn-edit" onclick="editOrder('${o.ID}')">Edit</button>${o.Phone?`<button class="btn-wa" onclick="sendWA('${o.ID}')">WA</button>`:''}<button class="btn-sm btn-del" onclick="deleteOrder('${o.ID}')">✕</button></td></tr>`).join('')}</table></div>`:'<div class="empty">No orders match</div>'}`;
+}
+
+function editOrder(id){
+  const o=orders.find(x=>x.ID===id);if(!o)return;
+  document.getElementById('edit-order-id').value=id;
+  document.getElementById('o-client').value=o.Client;
+  document.getElementById('o-phone').value=o.Phone||'';
+  document.getElementById('o-date').value=o.Date||'';
+  document.getElementById('o-time').value=o.Time||'';
+  document.getElementById('o-payment').value=o.Payment||'Gpay';
+  document.getElementById('o-status').value=o.Status||'Paid';
+  document.getElementById('o-upi').value=o.UPI||'';
+  document.getElementById('o-notes').value=o.Notes||'';
+  cart=o.Items.map(i=>({...i,misc:!menuItems.find(m=>m.name===i.name)}));
+  document.getElementById('order-form-title').textContent='Edit order';
+  document.getElementById('save-btn').textContent='Update order';
+  showSection('new-order');renderMenu();renderCart();
+}
+
+function renderMenu(){
+  const cats=[...new Set(menuItems.map(m=>m.cat))];let html='';
+  for(const cat of cats){
+    const items=menuItems.filter(m=>m.cat===cat);
+    html+=`<div class="menu-cat-label">${cat}</div><div class="menu-grid-tap">`;
+    html+=items.map(item=>{const count=cart.filter(c=>c.name===item.name&&!c.misc).reduce((s,c)=>s+(c.qty||1),0);return `<div class="menu-item${count>0?' selected':''}" onclick="addMenuItemToCart('${item.name.replace(/'/g,"\\'")}',${item.sell},${item.cost||0})"><div class="menu-item-name">${item.name}</div><div class="menu-item-price">${fmt(item.sell)}</div>${count>0?`<div class="menu-item-check">✓ x${count}</div>`:''}</div>`;}).join('');
+    html+='</div>';
+  }
+  document.getElementById('menu-grid').innerHTML=html;
+}
+
+function addMenuItemToCart(name,price,cost){cart.push({name,price,cost,qty:1,misc:false});renderMenu();renderCart();}
+function addMisc(){
+  const name=document.getElementById('misc-name').value.trim();
+  const qty=parseFloat(document.getElementById('misc-qty').value)||1;
+  const price=parseFloat(document.getElementById('misc-price').value)||0;
+  if(!name){toast('Enter a name for the custom item');return;}
+  cart.push({name,price,cost:0,qty,misc:true});
+  document.getElementById('misc-name').value='';document.getElementById('misc-price').value='';document.getElementById('misc-qty').value='1';
+  renderCart();
+}
+function renderCart(){
+  const el=document.getElementById('cart-items');const empty=document.getElementById('cart-empty');
+  if(!cart.length){el.innerHTML='';empty.style.display='block';calcTotal();return;}
+  empty.style.display='none';
+  el.innerHTML=cart.map((c,i)=>`<div class="cart-row"><div style="font-size:13px;font-weight:500;">${c.name}${c.misc?' <span style="font-size:11px;color:var(--pink);">(custom)</span>':''}</div><input type="number" value="${c.qty}" min="0.5" step="0.5" style="margin:0;padding:5px 7px;" onchange="updateQty(${i},this.value)"><input type="number" value="${c.price}" min="0" style="margin:0;padding:5px 7px;" onchange="updatePrice(${i},this.value)"><button class="remove-btn" onclick="removeCartItem(${i})">×</button></div>`).join('');
+  calcTotal();renderMenu();
+}
+function updateQty(i,v){cart[i].qty=parseFloat(v)||1;calcTotal();}
+function updatePrice(i,v){cart[i].price=parseFloat(v)||0;calcTotal();}
+function removeCartItem(i){cart.splice(i,1);renderMenu();renderCart();}
+function calcTotal(){const t=cart.reduce((s,c)=>s+(c.qty*c.price),0);document.getElementById('order-total').textContent=fmt(t);return t;}
+
+function clientSuggest(input){
+  const val=input.value.trim().toLowerCase();const sugg=document.getElementById('client-suggestions');
+  if(val.length<1){sugg.style.display='none';return;}
+  const known=[...new Set(orders.map(o=>o.Client))].filter(n=>n.toLowerCase().includes(val)).slice(0,6);
+  if(!known.length){sugg.style.display='none';return;}
+  sugg.innerHTML=known.map(n=>`<div style="padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:0.5px solid var(--border);" onmousedown="selectClient('${n.replace(/'/g,"\\'")}')" onmouseover="this.style.background='var(--pink-light)'" onmouseout="this.style.background=''"><span style="font-weight:500;">${n}</span><span style="color:var(--muted);font-size:11px;margin-left:6px;">${orders.filter(o=>o.Client===n).length} past orders</span></div>`).join('');
+  sugg.style.display='block';
+}
+function selectClient(name){
+  document.getElementById('o-client').value=name;document.getElementById('client-suggestions').style.display='none';
+  const last=orders.filter(o=>o.Client===name).sort((a,b)=>new Date(b.Date)-new Date(a.Date))[0];
+  if(last&&last.Phone)document.getElementById('o-phone').value=last.Phone;
+  if(last&&last.UPI)document.getElementById('o-upi').value=last.UPI;
+}
+document.addEventListener('click',e=>{if(!e.target.closest('#o-client')&&!e.target.closest('#client-suggestions'))document.getElementById('client-suggestions').style.display='none';});
+
+function resetForm(){
+  ['o-client','o-phone','o-notes','o-upi','misc-name','misc-price'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('o-date').value='';document.getElementById('o-time').value='';
+  document.getElementById('o-payment').value='Gpay';document.getElementById('o-status').value='Paid';
+  document.getElementById('misc-qty').value='1';document.getElementById('edit-order-id').value='';
+  document.getElementById('order-form-title').textContent='New order';document.getElementById('save-btn').textContent='Save order';
+  cart=[];renderMenu();renderCart();
+}
+
+function buildWAMessage(o,total){
+  const upi=o.UPI||UPI_DEFAULT;
+  const itemLines=(o.Items||[]).filter(i=>!i.name.toLowerCase().includes('add on')&&i.name.toLowerCase()!=='add ons').map(i=>i.name+(i.qty>1?' x'+i.qty:'')).join('\n');
+  return `Hi ${o.Client},\nDetails of your order are below -\nDate - ${ordinalDate(o.Date)}\nTime - ${o.Time||'TBC'}\n${itemLines}\nTotal ${Math.round(total).toLocaleString('en-IN')}\nI will set up everything on my crockery which you can return to me the next day.\nPayment details - Please use the below mentioned UPI.\n${upi}\nPlease share a screenshot of the payment once done for us to confirm the order`;
+}
+
+function saveOrder(){
+  const client=document.getElementById('o-client').value.trim();
+  if(!client){toast('Please enter a client name');return;}
+  if(!cart.length){toast('Please add at least one item');return;}
+  const total=calcTotal();const editId=document.getElementById('edit-order-id').value;
+  const order={ID:editId||Date.now().toString(),Client:client,Phone:document.getElementById('o-phone').value.trim(),Date:document.getElementById('o-date').value||new Date().toISOString().split('T')[0],Time:document.getElementById('o-time').value,Payment:document.getElementById('o-payment').value,Status:document.getElementById('o-status').value,UPI:document.getElementById('o-upi').value.trim(),Notes:document.getElementById('o-notes').value.trim(),Items:cart.map(c=>({name:c.name,qty:c.qty,price:c.price,cost:c.cost||getCost(c.name)||0})),Total:total};
+  if(editId){const idx=orders.findIndex(o=>o.ID===editId);if(idx>=0)orders[idx]=order;else orders.unshift(order);}
+  else orders.unshift(order);
+  saveLocal();
+  
+  toast(editId?'Order updated!':'Order saved!');
+  const phone=order.Phone.replace(/\D/g,'');
+  const msg=encodeURIComponent(buildWAMessage(order,total));
+  const calDate=order.Date.replace(/-/g,'');
+  const waUrl=phone?'https://wa.me/91'+phone+'?text='+msg:'https://wa.me/?text='+msg;
+  const calUrl='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent('Tiny Plates: '+client)+'&dates='+calDate+'/'+calDate+'&details='+encodeURIComponent((order.Items||[]).map(i=>i.name+' x'+i.qty).join(', ')+'\nTotal: '+fmt(total));
+  showPostSave(waUrl,calUrl,!!editId);resetForm();
+}
+
+function showPostSave(waUrl,calUrl,isEdit){
+  const el=document.getElementById('post-save-modal');el.style.display='block';
+  el.innerHTML=`<div style="background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:2rem 1rem;border-radius:var(--radius);min-height:160px;margin-bottom:1rem;"><div style="background:var(--surface);border-radius:var(--radius);max-width:340px;width:100%;overflow:hidden;"><div style="background:var(--black2);padding:1rem 1.25rem;"><h3 style="color:white;font-size:15px;font-weight:500;">${isEdit?'Order updated ✓':'Order saved ✓'}</h3></div><div style="padding:1.25rem;"><div style="font-size:13px;color:var(--muted);margin-bottom:1rem;">What would you like to do next?</div><div style="display:flex;flex-direction:column;gap:10px;"><button class="btn-wa" style="padding:11px;font-size:13px;width:100%;" onclick="window.open('${waUrl}','_blank');closePostSave();">Send WhatsApp confirmation</button><button class="btn-gcal" style="width:100%;" onclick="window.open('${calUrl}','_blank');closePostSave();">Add to Google Calendar</button><button class="btn-secondary" style="width:100%;" onclick="closePostSave()">Done</button></div></div></div></div>`;
+}
+function closePostSave(){document.getElementById('post-save-modal').style.display='none';}
+
+function sendWA(id){const o=orders.find(x=>x.ID==id);if(!o)return;const msg=encodeURIComponent(buildWAMessage(o,o.Total));const phone=(o.Phone||'').replace(/\D/g,'');window.open(phone?'https://wa.me/91'+phone+'?text='+msg:'https://wa.me/?text='+msg,'_blank');}
+
+function deleteOrder(id){
+  if(!confirm('Delete this order?'))return;
+  orders=orders.filter(o=>o.ID!=id);saveLocal();
+  
+  renderOrders();toast('Order deleted');
+}
+
+function renderMenuMgr(){
+  const cats=[...new Set(menuItems.map(m=>m.cat))];let html='';
+  for(const cat of cats){
+    html+=`<div style="font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin:14px 0 6px;">${cat}</div>`;
+    menuItems.filter(m=>m.cat===cat).forEach(item=>{
+      const idx=menuItems.indexOf(item);const margin=item.cost>0?Math.round((item.sell-item.cost)/item.sell*100):null;
+      html+=`<div class="menu-mgr-row"><div style="font-size:13px;font-weight:500;">${item.name}</div><select onchange="updateMenuCat(${idx},this.value)"><option${item.cat==='Boards & logs'?' selected':''}>Boards & logs</option><option${item.cat==='Gift boxes'?' selected':''}>Gift boxes</option><option${item.cat==='Extras'?' selected':''}>Extras</option></select><input type="number" value="${item.sell}" min="0" onchange="updateMenuField(${idx},'sell',this.value)"><input type="number" value="${item.cost||''}" min="0" onchange="updateMenuField(${idx},'cost',this.value)" placeholder="cost"><div>${margin!==null?`<span class="profit-badge">${margin}%</span>`:'<span style="font-size:11px;color:var(--hint);">—</span>'}</div><button class="btn-sm btn-del" onclick="removeMenuItem(${idx})">✕</button></div>`;
+    });
+  }
+  document.getElementById('menu-mgr-list').innerHTML=html||'<div class="empty">No menu items</div>';
+  renderProfitByItem();
+}
+function updateMenuCat(idx,val){menuItems[idx].cat=val;saveLocal();renderMenuMgr();}
+function updateMenuField(idx,field,val){menuItems[idx][field]=parseFloat(val)||0;saveLocal();renderMenuMgr();}
+function removeMenuItem(idx){if(!confirm('Remove this item?'))return;const item=menuItems[idx];menuItems.splice(idx,1);saveLocal();renderMenuMgr();}
+function addMenuItem(){
+  const name=document.getElementById('new-item-name').value.trim();
+  const cat=document.getElementById('new-item-cat').value;
+  const sell=parseFloat(document.getElementById('new-item-sell').value)||0;
+  const cost=parseFloat(document.getElementById('new-item-cost').value)||0;
+  if(!name){toast('Enter an item name');return;}
+  const item={name,cat,sell,cost};menuItems.push(item);saveLocal();
+  
+  document.getElementById('new-item-name').value='';document.getElementById('new-item-sell').value='';document.getElementById('new-item-cost').value='';
+  renderMenuMgr();toast('Item added');
+}
+
+function renderProfitByItem(){
+  const dm={};
+  orders.forEach(o=>(o.Items||[]).forEach(it=>{if(!it.name||it.name.toLowerCase().includes('add on')||it.name.toLowerCase()==='add ons')return;if(!dm[it.name])dm[it.name]={sold:0,revenue:0,cost:0};const cp=it.cost||getCost(it.name)||0;dm[it.name].sold+=it.qty||1;dm[it.name].revenue+=(it.qty||1)*(it.price||0);dm[it.name].cost+=(it.qty||1)*cp;}));
+  const items=Object.entries(dm).sort((a,b)=>(b[1].revenue-b[1].cost)-(a[1].revenue-a[1].cost));
+  if(!items.length){document.getElementById('profit-by-item').innerHTML='<div class="empty">No data</div>';return;}
+  document.getElementById('profit-by-item').innerHTML=`<table><tr><th>Dish</th><th>Sold</th><th>Revenue</th><th>Cost</th><th>Profit</th><th>Margin</th></tr>${items.map(([name,d])=>{const profit=d.revenue-d.cost;const margin=d.revenue>0?Math.round(profit/d.revenue*100):0;return `<tr><td style="font-weight:500;">${name}</td><td>${Math.round(d.sold)}</td><td>${fmt(d.revenue)}</td><td style="color:var(--muted);">${fmt(d.cost)}</td><td style="font-weight:500;color:var(--green);">${fmt(profit)}</td><td><span class="profit-badge">${margin}%</span></td></tr>`;}).join('')}</table>`;
+}
+
+renderDashboard();
+</script>
+</body>
+</html>
