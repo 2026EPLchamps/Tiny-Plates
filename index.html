@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tiny Plates</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{--pink:#D4537E;--pink-light:#FBEAF0;--pink-mid:#F4C0D1;--pink-dark:#4B1528;--pink-deep:#72243E;--black2:#2C2C2A;--surface:#fff;--surface2:#f8f4f5;--border:#e8dde0;--text:#1a1a1a;--muted:#6b5b5f;--hint:#a8949a;--radius:12px;--radius-sm:8px;--green:#2d7a3a;--green-light:#e8f5eb;}
@@ -130,7 +132,7 @@ tr:hover td{background:var(--pink-light);}
       <div class="filter-row">
         <input placeholder="Search..." id="srch" oninput="renderOrders()">
         <select id="fpay" onchange="renderOrders()"><option value="">All payments</option><option value="Gpay">Gpay</option><option value="Cash">Cash</option></select>
-        <select id="fmon" onchange="renderOrders()"><option value="">All months</option><option value="2026-03">March 2026</option><option value="2026-04">April 2026</option><option value="2026-05">May 2026</option></select>
+        <select id="fmon" onchange="renderOrders()"><option value="">All months</option></select>
       </div>
       <div id="orders-table"></div>
     </div>
@@ -217,6 +219,17 @@ var period = "all";
 var cart = [];
 var orders = [];
 var menu = [];
+var db = null;
+
+var FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDBYvquOTUSItI2l9FF0NSltuqQmKJD2-4",
+  authDomain: "tiny-plates.firebaseapp.com",
+  databaseURL: "https://tiny-plates-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "tiny-plates",
+  storageBucket: "tiny-plates.firebasestorage.app",
+  messagingSenderId: "287516822749",
+  appId: "1:287516822749:web:e3a805672461f3c8145f34"
+};
 
 var SEED_ORDERS = [
   {ID:"m001",Client:"Shirene Muncherjee",Phone:"",Date:"2026-03-20",Time:"",Payment:"Gpay",Status:"Paid",UPI:"",Notes:"",Items:[{name:"Honey Goat Boat",qty:1,price:2200,cost:1127},{name:"Bacon Bomb",qty:1,price:1800,cost:1378},{name:"Add ons",qty:8,price:300,cost:263}],Total:6400},
@@ -273,25 +286,114 @@ var SEED_MENU = [
   {name:"Extra Lavash",cat:"Extras",sell:100,cost:75}
 ];
 
-function loadData() {
+/* ---------- DATA LAYER: Firebase cloud sync with localStorage cache ---------- */
+
+function setSS(t) {
+  var el = document.getElementById("ss");
+  if (el) el.textContent = t;
+}
+
+function toArray(val) {
+  if (!val) return [];
+  if (Object.prototype.toString.call(val) === "[object Array]") {
+    return val.filter(function(x){ return !!x; });
+  }
+  return Object.keys(val).map(function(k){ return val[k]; });
+}
+
+function loadCache() {
   try {
     var o = localStorage.getItem("tp_o");
-    orders = o ? JSON.parse(o) : JSON.parse(JSON.stringify(SEED_ORDERS));
-  } catch(e) { orders = JSON.parse(JSON.stringify(SEED_ORDERS)); }
+    orders = o ? JSON.parse(o) : [];
+  } catch(e) { orders = []; }
   try {
     var m = localStorage.getItem("tp_m");
-    menu = m ? JSON.parse(m) : JSON.parse(JSON.stringify(SEED_MENU));
-  } catch(e) { menu = JSON.parse(JSON.stringify(SEED_MENU)); }
+    menu = m ? JSON.parse(m) : [];
+  } catch(e) { menu = []; }
   if (!orders || !orders.length) orders = JSON.parse(JSON.stringify(SEED_ORDERS));
   if (!menu || !menu.length) menu = JSON.parse(JSON.stringify(SEED_MENU));
 }
 
-function saveData() {
+function saveLocal() {
   try { localStorage.setItem("tp_o", JSON.stringify(orders)); } catch(e) {}
   try { localStorage.setItem("tp_m", JSON.stringify(menu)); } catch(e) {}
 }
 
-function fmt(n) { return "\u20B9" + Math.round(n).toLocaleString("en-IN"); }
+function saveData() {
+  saveLocal();
+  if (db) { try { db.ref("menu").set(menu); } catch(e) {} }
+}
+
+function persistOrder(order) {
+  saveLocal();
+  if (db) { try { db.ref("orders/" + order.ID).set(order); } catch(e) {} }
+}
+
+function persistDeleteOrder(id) {
+  saveLocal();
+  if (db) { try { db.ref("orders/" + id).remove(); } catch(e) {} }
+}
+
+function initData() {
+  loadCache();
+  renderDashboard();
+  if (!window.firebase || FIREBASE_CONFIG.apiKey.indexOf("PASTE") === 0) { setSS("local only"); return; }
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+  } catch(e) { setSS("offline"); db = null; return; }
+  setSS("connecting...");
+  db.ref("orders").once("value").then(function(snap) {
+    var cloud = snap.val() || {};
+    var updates = {};
+    var hasUpdates = false;
+    for (var i = 0; i < orders.length; i++) {
+      var id = orders[i].ID;
+      if (id && !cloud[id]) { updates[id] = orders[i]; hasUpdates = true; }
+    }
+    if (hasUpdates) return db.ref("orders").update(updates);
+  }).then(function() {
+    return db.ref("menu").once("value");
+  }).then(function(snap) {
+    if (!toArray(snap.val()).length) return db.ref("menu").set(menu);
+  }).then(function() {
+    attachSync();
+  }).catch(function(e) {
+    setSS("offline");
+    attachSync();
+  });
+}
+
+function attachSync() {
+  db.ref("orders").on("value", function(snap) {
+    orders = toArray(snap.val());
+    saveLocal();
+    refreshView();
+  });
+  db.ref("menu").on("value", function(snap) {
+    var m = toArray(snap.val());
+    if (m.length) { menu = m; saveLocal(); refreshView(); }
+  });
+  db.ref(".info/connected").on("value", function(snap) {
+    setSS(snap.val() ? "synced" : "offline");
+  });
+}
+
+function refreshView() {
+  var active = document.querySelector(".section.active");
+  var id = active ? active.id : "dashboard";
+  if (id === "dashboard") renderDashboard();
+  if (id === "orders") {
+    var lv = document.getElementById("list-view");
+    if (lv && lv.style.display !== "none") renderOrders();
+  }
+  if (id === "new-order") renderMenu();
+  if (id === "menu-mgr") renderMenuMgr();
+}
+
+/* ---------- END DATA LAYER ---------- */
+
+function fmt(n) { return "₹" + Math.round(n).toLocaleString("en-IN"); }
 
 function fmtDate(d) {
   if (!d) return "";
@@ -488,7 +590,32 @@ function drillClient(name) {
 
 function closeDetail() { document.getElementById("detail-view").style.display="none"; document.getElementById("list-view").style.display="block"; }
 
+function buildMonthFilter() {
+  var sel = document.getElementById("fmon");
+  if (!sel) return;
+  var cur = sel.value;
+  var months = [];
+  orders.forEach(function(o){
+    if (o.Date && o.Date.length >= 7) {
+      var m = o.Date.slice(0,7);
+      if (months.indexOf(m) < 0) months.push(m);
+    }
+  });
+  months.sort();
+  months.reverse();
+  var names = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var html = '<option value="">All months</option>';
+  for (var i=0; i<months.length; i++) {
+    var y = months[i].slice(0,4);
+    var mo = parseInt(months[i].slice(5,7), 10);
+    if (mo >= 1 && mo <= 12) html += '<option value="' + months[i] + '">' + names[mo-1] + ' ' + y + '</option>';
+  }
+  sel.innerHTML = html;
+  sel.value = cur;
+}
+
 function renderOrders() {
+  buildMonthFilter();
   var search = (document.getElementById("srch").value||"").toLowerCase();
   var payF = document.getElementById("fpay").value;
   var monF = document.getElementById("fmon").value;
@@ -668,7 +795,7 @@ function saveOrder() {
   if (editId) {
     for (var i=0; i<orders.length; i++) { if (orders[i].ID===editId) { orders[i]=order; break; } }
   } else { orders.unshift(order); }
-  saveData();
+  persistOrder(order);
   showToast(editId ? "Order updated!" : "Order saved!");
   var phone = order.Phone.replace(/\D/g,"");
   var msg = encodeURIComponent(buildWA(order, total));
@@ -704,7 +831,8 @@ function sendWA(id) {
 function delOrder(id) {
   if (!confirm("Delete this order?")) return;
   orders = orders.filter(function(o){ return o.ID!=id; });
-  saveData(); renderOrders(); showToast("Order deleted");
+  persistDeleteOrder(id);
+  renderOrders(); showToast("Order deleted");
 }
 
 function renderMenuMgr() {
@@ -775,8 +903,7 @@ function renderProfitTable() {
   document.getElementById("profit-table").innerHTML = html;
 }
 
-loadData();
-renderDashboard();
+initData();
 </script>
 </body>
 </html>
